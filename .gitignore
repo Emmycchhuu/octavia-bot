@@ -1,0 +1,15 @@
+# Sensitive files
+.env
+personality.json
+meetings.json
+
+# Local authentication storage
+.wwebjs_auth/
+
+# Dependencies
+node_modules/
+npm-debug.log*
+
+# OS specific
+.DS_Store
+Thumbs.db
