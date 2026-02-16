@@ -172,8 +172,11 @@ client.on('message_create', async (msg) => {
             );
         }
 
-        // ** 3. The Doorman (Rule Engine) 🛑 **
-        // Check for simple messages to save API costs
+        // ** 3. The Local Brain (Offline Intelligence) 🧠 **
+        // Checks Math, Static Knowledge, and simple rules BEFORE calling Gemini
+        const { processLocalBrain } = require('./brain/index');
+
+        // Check "Doorman" rules first (Hi/Hello)
         const simpleRules = {
             'hi': ['Hey there! 👋', 'Sup?', 'Hello!', 'Hi!'],
             'hello': ['Hi there!', 'Greetings.', 'Hello to you too.'],
@@ -181,16 +184,21 @@ client.on('message_create', async (msg) => {
             'thank you': ['You are welcome.', 'No worries!', 'Sure thing.'],
             'lol': ['😂', 'Hehe.', 'lol indeed.'],
             'ok': ['👍', 'Cool.', 'Okay.'],
-            'cool': ['Very cool.', '😎', 'Indeed.'],
             'bye': ['See ya.', 'Later!', 'Bye bye.']
         };
 
-        const exactMatch = simpleRules[lowerMsg];
-        if (exactMatch) {
-            const randomReply = exactMatch[Math.floor(Math.random() * exactMatch.length)];
-            await chat.sendMessage(randomReply);
-            console.log(`[Rule Engine] Replied to "${lowerMsg}" with "${randomReply}"`);
-            return; // STOP here, do not call AI
+        if (simpleRules[lowerMsg]) {
+            const reply = simpleRules[lowerMsg][Math.floor(Math.random() * simpleRules[lowerMsg].length)];
+            await chat.sendMessage(reply);
+            return;
+        }
+
+        // Check Advanced Local Brain (Math, Facts)
+        const localReply = processLocalBrain(lowerMsg);
+        if (localReply) {
+            await chat.sendMessage(localReply);
+            console.log(`[Local Brain] Replied: ${localReply}`);
+            return;
         }
 
         // ** 4. Handle Media (Vision & Voice) **
