@@ -1,4 +1,4 @@
-const { GoogleGenerativeAI } = require("@google/generative-ai");
+const { GoogleGenerativeAI } = require("@google/generative-ai"); // Standard library
 const fs = require('fs');
 require('dotenv').config();
 
@@ -12,6 +12,7 @@ let currentKeyIndex = 0;
 function getGenerativeModel() {
     if (keys.length === 0) throw new Error("No Gemini keys found in .env");
     const genAI = new GoogleGenerativeAI(keys[currentKeyIndex].trim());
+    // Using "gemini-1.5-flash" which is the stable model
     return genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 }
 
@@ -50,31 +51,25 @@ async function generateSmartResponse(incomingMessage, contactName) {
         Scheduling: If a user wants to "talk to Emmy", "schedule a meeting", "see him", or "book time", tell them you will notify him right away.
         "Emmy will get back to you soon".
         
-        Reply to ${contactName} in a way that fits your current mode. Keep it natural for WhatsApp.
+        Reply to ${contactName} in a way that fits your current mode. Keep it short and natural for WhatsApp.
     `;
 
-    // Try multiple keys if there are failures
     for (let i = 0; i < keys.length; i++) {
         try {
             const model = getGenerativeModel();
 
-            const result = await model.generateContent([
-                { text: systemPrompt },
-                { text: `${contactName} says: ${incomingMessage}` }
-            ]);
-
+            // Generate content with both the system prompt and user message
+            const result = await model.generateContent(`${systemPrompt}\n\nUser Message from ${contactName}: ${incomingMessage}`);
             const response = await result.response;
             return response.text().trim();
         } catch (error) {
             console.error(`Error with Gemini key at index ${currentKeyIndex}:`, error.message);
 
-            // Rotate on rate limit or specific errors
-            if (error.message.includes('429') || error.message.includes('quota')) {
-                rotateKey();
-            } else {
-                // If it's a content safety block or other error, try next key anyway
-                rotateKey();
-            }
+            // If it's a 404, it might mean the model name is slightly different in some regions
+            // But usually rotating the key handles quota issues
+            rotateKey();
+
+            if (i === keys.length - 1) break;
         }
     }
 
