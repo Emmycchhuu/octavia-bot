@@ -11,15 +11,19 @@ const { processPatterns } = require('./patterns');
 const { processNotes } = require('./notes');
 const { processQuotes } = require('./quotes');
 const { processLearning } = require('./learning');
+const { processTodo } = require('./todo');
+const { processDictionary } = require('./dictionary');
+const { processWeather } = require('./weather');
 
 // Load static knowledge
 const knowledgeBase = JSON.parse(fs.readFileSync(path.join(__dirname, 'knowledge.json'), 'utf8'));
 
 /**
  * The Central Local Brain
- * Checks: Math -> Date -> Sys -> Converter -> Utils -> Remind -> Notes -> Quotes -> Learning -> Patterns -> Knowledge -> null
+ * Checks: Math -> Date -> Sys -> Converter -> Utils -> Remind -> Notes -> Todo -> Dict -> Weather -> Learning -> Patterns -> Knowledge -> null
+ * NOW ASYNC to support Weather fetch.
  */
-function processLocalBrain(message, contactName = 'Friend') {
+async function processLocalBrain(message, contactName = 'Friend') {
     const cleanMsg = message.toLowerCase().trim();
 
     // 1. Math
@@ -52,19 +56,31 @@ function processLocalBrain(message, contactName = 'Friend') {
     const noteResult = processNotes(message, contactName);
     if (noteResult) return noteResult;
 
-    // 8. Learning (Passive Memory)
+    // 8. Todo List
+    const todoResult = processTodo(message, contactName);
+    if (todoResult) return todoResult;
+
+    // 9. Dev Dictionary
+    const dictResult = processDictionary(cleanMsg);
+    if (dictResult) return dictResult;
+
+    // 10. Weather (Async)
+    const weatherResult = await processWeather(cleanMsg);
+    if (weatherResult) return weatherResult;
+
+    // 11. Learning (Passive Memory)
     const learnResult = processLearning(message, contactName);
     if (learnResult) return learnResult;
 
-    // 9. Quotes
+    // 12. Quotes
     const quoteResult = processQuotes(cleanMsg);
     if (quoteResult) return quoteResult;
 
-    // 10. Conversational Patterns (Greetings, Insults)
+    // 13. Conversational Patterns (Greetings, Insults)
     const patternResult = processPatterns(cleanMsg);
     if (patternResult) return patternResult;
 
-    // 11. Static Knowledge
+    // 14. Static Knowledge
     for (const [question, answer] of Object.entries(knowledgeBase)) {
         if (cleanMsg.includes(question)) {
             return answer;
