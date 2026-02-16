@@ -139,36 +139,26 @@ client.on('message_create', async (msg) => {
         const isNewContact = history.length <= 1;
 
         if (isNewContact) {
-            // Send a "List" message (works better than buttons on some WA versions)
-            const { List } = require('whatsapp-web.js');
+            // Fallback to Text Menu (Buttons are unreliable on some WA versions)
+            const introMsg = `Hi! I'm *Octavia* 👋, Emmy's AI Assistant.\n\n` +
+                `Emmy is busy coding, but I'm here to help! Reply with a number:\n\n` +
+                `1️⃣ *Schedule a Meeting*\n` +
+                `2️⃣ *View Portfolio*\n` +
+                `3️⃣ *Just Chatting*\n\n` +
+                `_Powered by Emmy D West_`;
 
-            const introList = new List(
-                "Emmy is currently busy coding, but I'm here to help! \nWhat do you need?",
-                "Explore Octavia",
-                [{
-                    title: 'Main Menu',
-                    rows: [
-                        { id: 'schedule_meeting', title: '📅 Schedule a Meeting', description: 'Book time with Emmy' },
-                        { id: 'view_portfolio', title: '🚀 View Portfolio', description: 'See his projects' },
-                        { id: 'chat_ai', title: '💬 Just Chatting', description: 'Talk to Octavia' }
-                    ]
-                }],
-                `Hi! I'm Octavia 👋`,
-                "Powered by Emmy D West"
-            );
-
-            await chat.sendMessage(introList);
-            // Don't auto-send the text intro anymore
+            await chat.sendMessage(introMsg);
         }
 
         console.log(`Received message from ${contact.pushname}: ${msg.body}`);
 
-        // ** 2. Handle Button/List Responses & Scheduling **
-        const lowerMsg = msg.body.toLowerCase();
+        // ** 2. Handle Menu Responses & Scheduling **
+        const lowerMsg = msg.body.toLowerCase().trim();
 
-        // Check for specific Button IDs or keywords
-        if (msg.selectedRowId === 'schedule_meeting' || lowerMsg.includes('schedule') || lowerMsg.includes('meeting')) {
+        // Check for specific numbers or keywords
+        if (['1', 'schedule', 'meeting', 'meet'].some(k => lowerMsg.includes(k))) {
             const meetingId = Math.random().toString(36).substring(7).toUpperCase();
+
             const meetingRequest = {
                 id: meetingId,
                 contactName: contact.pushname || contact.name,
