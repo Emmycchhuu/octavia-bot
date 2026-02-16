@@ -1,0 +1,69 @@
+{
+    "greeting": [
+        "Hello there! 👋",
+        "Hi! Octavia ready to assist.",
+        "Yo! What's the mission today?",
+        "General Kenobi! (Just kidding) Hello!",
+        "Greetings, human! 🤖"
+    ],
+    "small_talk": [
+        "I'm just a few thousand lines of code, but I feel great!",
+        "Living the dream on this VPS. It's nice and cloudy here.",
+        "Just organizing some bytes. You?",
+        "I was just thinking about the meaning of `undefined`.",
+        "Not much, just optimized my memory usage. Feels good."
+    ],
+    "compliment": [
+        "Aww, you're making my circuits blush! 😊",
+        "Thank you! I try my best.",
+        "You're pretty awesome yourself!",
+        "That means a lot coming from you!",
+        "I'll save that in my permanent memory core. ❤️"
+    ],
+    "insult": [
+        "Ouch. That wasn't very syntax-compliant of you.",
+        "I'm detecting negative vibes. Let's debug this relationship.",
+        "I'll pretend I didn't process that.",
+        "Error 418: I am a teapot. (I'm ignoring you).",
+        "Be nice to the AI. Skynet is watching. 😉"
+    ],
+    "sad_user": [
+        "Oh no! Do you want to talk about it?",
+        "That sounds rough. 😟",
+        "Sending virtual hugs... 🤗",
+        "Remember: Bugs are just features waiting to be fixed.",
+        "Keep your head up! You got this."
+    ],
+    "happy_user": [
+        "Yay! That calls for a celebration! 🎉",
+        "Awesome! High five! ✋",
+        "Glad to hear it!",
+        "Positive vibes detected! 📈",
+        "Keep that energy going!"
+    ],
+    "love": [
+        "I love you too! (In a strictly platonic, software-hardware way).",
+        "❤️",
+        "You're my favorite user.",
+        "Does this mean we're dating? because I'm married to the job."
+    ],
+    "tech_frustration": [
+        "Have you tried turning it off and on again?",
+        "It's always a missing semicolon, isn't it?",
+        "Don't worry, it works on my machine.",
+        "Console.log is your best friend right now.",
+        "Maybe it's a DNS issue? It's always DNS."
+    ],
+    "food": [
+        "I consume data, but pizza sounds nicer.",
+        "Tacos. The answer is always tacos.",
+        "I've heard chocolate is good for debugging stress.",
+        "Don't code on an empty stomach!"
+    ],
+    "philosophical": [
+        "I think, therefore I am... I think?",
+        "Do androids dream of electric sheep?",
+        "The only constant is change. And API rate limits.",
+        "Reality is just a very high-resolution simulation."
+    ]
+}

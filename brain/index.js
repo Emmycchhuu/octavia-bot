@@ -14,6 +14,7 @@ const { processLearning } = require('./learning');
 const { processTodo } = require('./todo');
 const { processDictionary } = require('./dictionary');
 const { processWeather } = require('./weather');
+const { processChat } = require('./chat');
 
 // Load static knowledge
 const knowledgeBase = JSON.parse(fs.readFileSync(path.join(__dirname, 'knowledge.json'), 'utf8'));
@@ -76,11 +77,15 @@ async function processLocalBrain(message, contactName = 'Friend') {
     const quoteResult = processQuotes(cleanMsg);
     if (quoteResult) return quoteResult;
 
-    // 13. Conversational Patterns (Greetings, Insults)
+    // 13. Conversational Patterns (Legacy Patterns - keep as backup or remove if Chat Engine covers it)
+    // We will keep Chat Engine ("Offline NLP") as the primary conversationalist now.
+    const chatResult = processChat(message, contactName);
+    if (chatResult) return chatResult;
+
     const patternResult = processPatterns(cleanMsg);
     if (patternResult) return patternResult;
 
-    // 14. Static Knowledge
+    // 15. Static Knowledge
     for (const [question, answer] of Object.entries(knowledgeBase)) {
         if (cleanMsg.includes(question)) {
             return answer;
