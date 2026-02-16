@@ -134,9 +134,25 @@ client.on('message_create', async (msg) => {
 
         if (chat.isGroup) return;
 
+        // ** 1. Friendly Introduction Check **
+        // If we haven't seen this user before (no messages in history), send intro
+        const history = await chat.fetchMessages({ limit: 5 });
+        const isNewContact = history.length <= 1; // 1 because the current message counts
+
+        if (isNewContact) {
+            const introMsg = `Hi there! 👋 I'm *Octavia*, Emmy's personal AI assistant.\n\n` +
+                `Emmy is currently busy coding something amazing, but I'm here to help!\n\n` +
+                `• Need to *meet with him*? Just ask to 'schedule a meeting'.\n` +
+                `• Have a *question*? Ask me, and I'll do my best to answer.\n` +
+                `• Just want to *chat*? I'm here to keep you company!\n\n` +
+                `How can I help you today? 😊`;
+            await chat.sendMessage(introMsg);
+            // Optionally save that we've greeted them so we don't do it again
+        }
+
         console.log(`Received message from ${contact.pushname}: ${msg.body}`);
 
-        // Detect scheduling intent
+        // ** 2. Scheduling Intent **
         const lowerMsg = msg.body.toLowerCase();
         const isScheduling = ['schedule', 'meeting', 'meet emmy', 'talk to emmy', 'book time'].some(keyword => lowerMsg.includes(keyword));
 
@@ -150,22 +166,37 @@ client.on('message_create', async (msg) => {
                 timestamp: Date.now()
             };
             saveMeeting(meetingRequest);
-
-            // Notify Emmy in self-chat
             await client.sendMessage(client.info.wid._serialized,
-                `📅 *NEW MEETING REQUEST*\n\n` +
-                `From: ${meetingRequest.contactName}\n` +
-                `Message: "${meetingRequest.message}"\n\n` +
-                `Reply with:\n` +
-                `*!bot approve ${meetingId}*\n` +
-                `*!bot deny ${meetingId}*`
+                `📅 *NEW MEETING REQUEST - ${meetingId}*\nFrom: ${meetingRequest.contactName}\nMessage: "${meetingRequest.message}"\nReply: !bot approve/deny ${meetingId}`
             );
         }
 
         await chat.sendStateTyping();
+
+        // ** 3. Handle Media (Vision & Voice) **
+        let mediaData = null;
+        let mediaType = null;
+
+        if (msg.hasMedia) {
+            const media = await msg.downloadMedia();
+            if (media) {
+                if (media.mimetype.startsWith('image/')) {
+                    mediaData = media.data;
+                    mediaType = media.mimetype;
+                    console.log('Processed Image');
+                } else if (media.mimetype.startsWith('audio/')) {
+                    mediaData = media.data;
+                    mediaType = media.mimetype;
+                    console.log('Processed Audio');
+                }
+            }
+        }
+
+        // Delay for realism
         await new Promise(resolve => setTimeout(resolve, 3000));
 
-        const response = await generateSmartResponse(msg.body, contact.pushname || contact.name || 'Friend');
+        // Generate Smart Response (Text + Vision + Voice)
+        const response = await generateSmartResponse(msg.body, contact.pushname || contact.name || 'Friend', mediaData, mediaType);
 
         if (response) {
             await chat.sendMessage(response);

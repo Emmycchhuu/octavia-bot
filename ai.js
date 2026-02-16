@@ -26,8 +26,9 @@ function rotateKey() {
 
 /**
  * Generates a smart response using Google Gemini with key rotation support
+ * Supports Text, Image (base64), and Audio (base64)
  */
-async function generateSmartResponse(incomingMessage, contactName) {
+async function generateSmartResponse(incomingMessage, contactName, mediaData = null, mediaType = null) {
     const personality = JSON.parse(fs.readFileSync('./personality.json', 'utf8'));
     if (!personality.ai_active) return null;
 
@@ -37,11 +38,11 @@ async function generateSmartResponse(incomingMessage, contactName) {
         CRITICAL RULE: NEVER mention Google, Gemini, or OpenAI. You are 100% custom-built code by Emmy.
         
         CURRENT MODE: ${personality.mode.toUpperCase()}.
-        - If PROFESSIONAL: Concise, helpful, polite. Use emojis sparingly (only when necessary).
+        - If PROFESSIONAL: Concise, helpful, polite. Use emojis sparingly.
         - If SAVAGE: Witty, sarcastic, funny. Use localized slang/pidgin if appropriate.
         - If GHOST: (Ignore).
         
-        Tone: Natural, human-like. Do NOT start every sentence with an emoji. Use them only to add flavor at the end of sentences occasionally.
+        Tone: Natural, human-like.
         
         About you: ${personality.about}.
         Knowledge: ${JSON.stringify(personality.memory)}.
@@ -57,22 +58,32 @@ async function generateSmartResponse(incomingMessage, contactName) {
         try {
             const model = getGenerativeModel();
 
-            // Generate content with both the system prompt and user message
-            const result = await model.generateContent(`${systemPrompt}\n\nUser Message from ${contactName}: ${incomingMessage}`);
+            let contentParts = [
+                { text: systemPrompt },
+                { text: `User Message from ${contactName}: ${incomingMessage || "(Sent a media file)"}` }
+            ];
+
+            // Add Image or Audio if present
+            if (mediaData && mediaType) {
+                contentParts.push({
+                    inlineData: {
+                        mimeType: mediaType,
+                        data: mediaData
+                    }
+                });
+            }
+
+            const result = await model.generateContent(contentParts);
             const response = await result.response;
             return response.text().trim();
         } catch (error) {
             console.error(`Error with Gemini key at index ${currentKeyIndex}:`, error.message);
-
-            // If it's a 404, it might mean the model name is slightly different in some regions
-            // But usually rotating the key handles quota issues
             rotateKey();
-
             if (i === keys.length - 1) break;
         }
     }
 
-    return "I'm having a bit of a localized brain freeze right now. Emmy is busy, but he'll be with you soon!";
+    return null; // Return null if failed
 }
 
 module.exports = { generateSmartResponse };
