@@ -10,13 +10,14 @@ const { processReminder } = require('./remind');
 const { processPatterns } = require('./patterns');
 const { processNotes } = require('./notes');
 const { processQuotes } = require('./quotes');
+const { processLearning } = require('./learning');
 
 // Load static knowledge
 const knowledgeBase = JSON.parse(fs.readFileSync(path.join(__dirname, 'knowledge.json'), 'utf8'));
 
 /**
  * The Central Local Brain
- * Checks: Math -> Date -> Sys -> Converter -> Utils -> Remind -> Notes -> Quotes -> Patterns -> Knowledge -> null
+ * Checks: Math -> Date -> Sys -> Converter -> Utils -> Remind -> Notes -> Quotes -> Learning -> Patterns -> Knowledge -> null
  */
 function processLocalBrain(message, contactName = 'Friend') {
     const cleanMsg = message.toLowerCase().trim();
@@ -51,15 +52,19 @@ function processLocalBrain(message, contactName = 'Friend') {
     const noteResult = processNotes(message, contactName);
     if (noteResult) return noteResult;
 
-    // 8. Quotes
+    // 8. Learning (Passive Memory)
+    const learnResult = processLearning(message, contactName);
+    if (learnResult) return learnResult;
+
+    // 9. Quotes
     const quoteResult = processQuotes(cleanMsg);
     if (quoteResult) return quoteResult;
 
-    // 9. Conversational Patterns (Greetings, Insults)
+    // 10. Conversational Patterns (Greetings, Insults)
     const patternResult = processPatterns(cleanMsg);
     if (patternResult) return patternResult;
 
-    // 10. Static Knowledge
+    // 11. Static Knowledge
     for (const [question, answer] of Object.entries(knowledgeBase)) {
         if (cleanMsg.includes(question)) {
             return answer;
