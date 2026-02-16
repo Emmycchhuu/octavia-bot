@@ -247,4 +247,7 @@ client.on('message_create', async (msg) => {
     }
 });
 
+// CRITICAL FIX: Ensure we do NOT listen to status_broadcast
+// client.on('status_broadcast', async (msg) => { ... });
+
 client.initialize();

@@ -1,3 +1,4 @@
+
 const fs = require('fs');
 const path = require('path');
 const { solveMath } = require('./math');
@@ -6,25 +7,27 @@ const { processConverter } = require('./converter');
 const { processSystem } = require('./sys');
 const { processUtils } = require('./utils');
 const { processReminder } = require('./remind');
+const { processPatterns } = require('./patterns');
+const { processNotes } = require('./notes');
+const { processQuotes } = require('./quotes');
 
 // Load static knowledge
 const knowledgeBase = JSON.parse(fs.readFileSync(path.join(__dirname, 'knowledge.json'), 'utf8'));
 
 /**
  * The Central Local Brain
- * Checks: Math -> Static Knowledge -> null (Pass to Gemini)
+ * Checks: Math -> Date -> Sys -> Converter -> Utils -> Remind -> Notes -> Quotes -> Patterns -> Knowledge -> null
  */
-function processLocalBrain(message) {
+function processLocalBrain(message, contactName = 'Friend') {
     const cleanMsg = message.toLowerCase().trim();
 
-    // 1. Check Math (e.g., "5 * 5")
-    // Simple heuristic: contains math operators and numbers
+    // 1. Math
     if (/[0-9]/.test(cleanMsg) && /[+\-*/]/.test(cleanMsg)) {
         const mathResult = solveMath(cleanMsg);
         if (mathResult) return mathResult;
     }
 
-    // 2. Check Date & Time
+    // 2. Date & Time
     const dateResult = processDateQuery(cleanMsg);
     if (dateResult) return dateResult;
 
@@ -42,13 +45,21 @@ function processLocalBrain(message) {
 
     // 6. Reminders
     const remindResult = processReminder(cleanMsg);
-    if (remindResult) return remindResult; // Returns Object or null
+    if (remindResult) return remindResult;
 
-    // 7. Conversational Patterns (Greetings, Insults, Varied Replies)
+    // 7. Notes (Memory)
+    const noteResult = processNotes(message, contactName);
+    if (noteResult) return noteResult;
+
+    // 8. Quotes
+    const quoteResult = processQuotes(cleanMsg);
+    if (quoteResult) return quoteResult;
+
+    // 9. Conversational Patterns (Greetings, Insults)
     const patternResult = processPatterns(cleanMsg);
     if (patternResult) return patternResult;
 
-    // 8. Check Static Knowledge (Exact & Fuzzy Match)
+    // 10. Static Knowledge
     for (const [question, answer] of Object.entries(knowledgeBase)) {
         if (cleanMsg.includes(question)) {
             return answer;
