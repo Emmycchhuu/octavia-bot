@@ -172,9 +172,28 @@ client.on('message_create', async (msg) => {
             );
         }
 
-        await chat.sendStateTyping();
+        // ** 3. The Doorman (Rule Engine) 🛑 **
+        // Check for simple messages to save API costs
+        const simpleRules = {
+            'hi': ['Hey there! 👋', 'Sup?', 'Hello!', 'Hi!'],
+            'hello': ['Hi there!', 'Greetings.', 'Hello to you too.'],
+            'thanks': ['No problem.', 'You got it.', 'Anytime.', 'Happy to help.'],
+            'thank you': ['You are welcome.', 'No worries!', 'Sure thing.'],
+            'lol': ['😂', 'Hehe.', 'lol indeed.'],
+            'ok': ['👍', 'Cool.', 'Okay.'],
+            'cool': ['Very cool.', '😎', 'Indeed.'],
+            'bye': ['See ya.', 'Later!', 'Bye bye.']
+        };
 
-        // ** 3. Handle Media (Vision & Voice) **
+        const exactMatch = simpleRules[lowerMsg];
+        if (exactMatch) {
+            const randomReply = exactMatch[Math.floor(Math.random() * exactMatch.length)];
+            await chat.sendMessage(randomReply);
+            console.log(`[Rule Engine] Replied to "${lowerMsg}" with "${randomReply}"`);
+            return; // STOP here, do not call AI
+        }
+
+        // ** 4. Handle Media (Vision & Voice) **
         let mediaData = null;
         let mediaType = null;
 

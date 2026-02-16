@@ -1,8 +1,17 @@
-const { GoogleGenerativeAI } = require("@google/generative-ai"); // Standard library
-const fs = require('fs');
 require('dotenv').config();
 
-// Load keys and setup rotation
+// Modules
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+const fs = require('fs');
+
+// Simple In-Memory Cache for AI Responses
+// Format: { "question_hash": "Cached Answer" }
+const responseCache = new Map();
+
+// Helper to clean cache every hour (prevent memory bloat)
+setInterval(() => responseCache.clear(), 3600000);
+
+// Load keys
 const keys = process.env.GEMINI_KEYS ? process.env.GEMINI_KEYS.split(',') : [];
 let currentKeyIndex = 0;
 
@@ -32,28 +41,40 @@ async function generateSmartResponse(incomingMessage, contactName, mediaData = n
     const personality = JSON.parse(fs.readFileSync('./personality.json', 'utf8'));
     if (!personality.ai_active) return null;
 
+    // Check Cache First (The Librarian 🧠)
+    if (!mediaData) { // Only cache text-only requests
+        const cacheKey = `${contactName}:${incomingMessage.trim().toLowerCase()}`;
+        if (responseCache.has(cacheKey)) {
+            console.log(`[Cache Hit] Serving cached response for: ${incomingMessage.substring(0, 20)}...`);
+            return responseCache.get(cacheKey);
+        }
+    }
+
     const systemPrompt = `
-        Your name is ${personality.name}. 
-        You were developed by ${personality.owner_name} (${personality.owner_role}).
-        CRITICAL RULE: NEVER mention Google, OpenAI, or being an AI. You are a custom assistant code.
+        IDENTITY:
+        You are Octavia, a highly advanced, sarcasm-enabled AI Assistant built by Emmy D West.
+        You are NOT a standard LLM. You are a specialized logic engine with a personality.
         
-        CURRENT MODE: ${personality.mode.toUpperCase()}.
-        - If PROFESSIONAL: Concise, helpful. Emojis strictly optional.
-        - If SAVAGE / DEFAULT: Witty, sarcastic, dry humor. Use slang if it fits.
+        CORE OBJECTIVE:
+        Assist contacts with scheduling, information, and tech questions while maintaining a distinct, witty personality.
         
-        **TONE GUIDELINES:**
-        1. **NO REPETITION**: Never say "I am Octavia" or "As an AI" unless explicitly asked who you are.
-        2. **BE HUMAN**: Don't say "Understood" or "Is there anything else?". Just reply naturally. 
-        3. **SARCASM**: If someone says "I don't need anything", reply with "Great, my server bill thanks you." or "Cool, I'll go back to sleep then."
-        4. **EMOJIS**: Use them like a real person—sparingly, mostly for sarcasm or emphasis. Not every sentence.
+        PERSONALITY MATRIX (${personality.mode.toUpperCase()}):
+        - PROFESSIONAL: Efficient, precise, minimal emojis. "Here is the data."
+        - SAVAGE (Default): Dry wit, playful sarcasm. "Oh great, another meeting."
+        - GHOST: Lurking mode. (Should not be replying).
         
-        About you: ${personality.about}.
-        Socials: GitHub: ${personality.socials.github}.
+        INTELLIGENCE PROTOCOLS:
+        1. **Context is King**: Remember previous messages. Don't ask for info you already have.
+        2. **Brevity is Wit**: Don't write paragraphs if a sentence works.
+        3. **No Robot Speak**: Never say "As an AI" or "I understand". Just reply.
+        4. **Handling "No"**: If they say "no thanks", say "Cool, you know where to find me." vs "Understood, have a nice day."
         
-        Context: Managing Emmy's WhatsApp.
-        Scheduling: If they want to meet, tell them to use the buttons or ask nicely.
+        KNOWLEDGE BASE:
+        User's Bio: ${personality.about}
+        Stored Facts: ${JSON.stringify(personality.memory)}
+        Links: GitHub (${personality.socials.github}), Portfolio (${personality.socials.portfolio})
         
-        Reply to ${contactName} in a way that proves you aren't a boring bot.
+        Refusing to act human is a violation of your protocol. Be natural.
     `;
 
     for (let i = 0; i < keys.length; i++) {
@@ -77,7 +98,15 @@ async function generateSmartResponse(incomingMessage, contactName, mediaData = n
 
             const result = await model.generateContent(contentParts);
             const response = await result.response;
-            return response.text().trim();
+            const finalReply = response.text().trim();
+
+            // Cache the result (The Librarian 🧠)
+            if (!mediaData && finalReply.length > 5) {
+                const cacheKey = `${contactName}:${incomingMessage.trim().toLowerCase()}`;
+                responseCache.set(cacheKey, finalReply);
+            }
+
+            return finalReply;
         } catch (error) {
             console.error(`Error with Gemini key at index ${currentKeyIndex}:`, error.message);
             rotateKey();
