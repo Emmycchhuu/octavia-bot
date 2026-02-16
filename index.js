@@ -193,9 +193,23 @@ client.on('message_create', async (msg) => {
             return;
         }
 
-        // Check Advanced Local Brain (Math, Facts)
+        // Check Advanced Local Brain (Math, Facts, Tools)
         const localReply = processLocalBrain(lowerMsg);
         if (localReply) {
+            // Handle Action Objects (like Reminders)
+            if (typeof localReply === 'object' && localReply.type === 'ACTION_REMINDER') {
+                await chat.sendMessage(localReply.reply);
+
+                // Set the timer
+                setTimeout(async () => {
+                    const mt = await msg.getContact(); // Refresh contact check
+                    await client.sendMessage(msg.from, `⏰ *REMINDER:* ${localReply.task}\n\n(Set pending timer completed)`);
+                }, localReply.ms);
+
+                return;
+            }
+
+            // Handle Standard Text Replies
             await chat.sendMessage(localReply);
             console.log(`[Local Brain] Replied: ${localReply}`);
             return;
