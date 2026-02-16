@@ -12,8 +12,8 @@ let currentKeyIndex = 0;
 function getGenerativeModel() {
     if (keys.length === 0) throw new Error("No Gemini keys found in .env");
     const genAI = new GoogleGenerativeAI(keys[currentKeyIndex].trim());
-    // Using "gemini-1.5-flash" which is the stable model
-    return genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    // Using "gemini-2.5-flash" as the current stable 2026 model
+    return genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 }
 
 /**
