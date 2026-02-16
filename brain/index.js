@@ -44,7 +44,11 @@ function processLocalBrain(message) {
     const remindResult = processReminder(cleanMsg);
     if (remindResult) return remindResult; // Returns Object or null
 
-    // 7. Check Static Knowledge (Exact & Fuzzy Match)
+    // 7. Conversational Patterns (Greetings, Insults, Varied Replies)
+    const patternResult = processPatterns(cleanMsg);
+    if (patternResult) return patternResult;
+
+    // 8. Check Static Knowledge (Exact & Fuzzy Match)
     for (const [question, answer] of Object.entries(knowledgeBase)) {
         if (cleanMsg.includes(question)) {
             return answer;
