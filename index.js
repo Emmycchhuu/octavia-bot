@@ -134,29 +134,40 @@ client.on('message_create', async (msg) => {
 
         if (chat.isGroup) return;
 
-        // ** 1. Friendly Introduction Check **
-        // If we haven't seen this user before (no messages in history), send intro
+        // ** 1. Friendly Introduction Check (With Buttons/List) **
         const history = await chat.fetchMessages({ limit: 5 });
-        const isNewContact = history.length <= 1; // 1 because the current message counts
+        const isNewContact = history.length <= 1;
 
         if (isNewContact) {
-            const introMsg = `Hi there! 👋 I'm *Octavia*, Emmy's personal AI assistant.\n\n` +
-                `Emmy is currently busy coding something amazing, but I'm here to help!\n\n` +
-                `• Need to *meet with him*? Just ask to 'schedule a meeting'.\n` +
-                `• Have a *question*? Ask me, and I'll do my best to answer.\n` +
-                `• Just want to *chat*? I'm here to keep you company!\n\n` +
-                `How can I help you today? 😊`;
-            await chat.sendMessage(introMsg);
-            // Optionally save that we've greeted them so we don't do it again
+            // Send a "List" message (works better than buttons on some WA versions)
+            const { List } = require('whatsapp-web.js');
+
+            const introList = new List(
+                "Emmy is currently busy coding, but I'm here to help! \nWhat do you need?",
+                "Explore Octavia",
+                [{
+                    title: 'Main Menu',
+                    rows: [
+                        { id: 'schedule_meeting', title: '📅 Schedule a Meeting', description: 'Book time with Emmy' },
+                        { id: 'view_portfolio', title: '🚀 View Portfolio', description: 'See his projects' },
+                        { id: 'chat_ai', title: '💬 Just Chatting', description: 'Talk to Octavia' }
+                    ]
+                }],
+                `Hi! I'm Octavia 👋`,
+                "Powered by Emmy D West"
+            );
+
+            await chat.sendMessage(introList);
+            // Don't auto-send the text intro anymore
         }
 
         console.log(`Received message from ${contact.pushname}: ${msg.body}`);
 
-        // ** 2. Scheduling Intent **
+        // ** 2. Handle Button/List Responses & Scheduling **
         const lowerMsg = msg.body.toLowerCase();
-        const isScheduling = ['schedule', 'meeting', 'meet emmy', 'talk to emmy', 'book time'].some(keyword => lowerMsg.includes(keyword));
 
-        if (isScheduling) {
+        // Check for specific Button IDs or keywords
+        if (msg.selectedRowId === 'schedule_meeting' || lowerMsg.includes('schedule') || lowerMsg.includes('meeting')) {
             const meetingId = Math.random().toString(36).substring(7).toUpperCase();
             const meetingRequest = {
                 id: meetingId,
